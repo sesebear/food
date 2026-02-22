@@ -47,12 +47,6 @@ shiny run app.py
 4. Click **Generate Recipe** on a row to see full instructions.
 5. Use **Download Recipe** to save the recipe as markdown.
 
-### Test USDA integration
-
-```bash
-python nutrition_query.py
-```
-
 Requires `FDC_API_KEY` and `OLLAMA_API_KEY` in `.env`.
 
 ## Project structure
