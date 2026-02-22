@@ -49,16 +49,17 @@ Requires FDC_API_KEY and OLLAMA_API_KEY in .env.
 
 ## Deployment (Digital Ocean App Platform)
 
-If the app fails health checks with "Application not responding on port 8080":
+A **Dockerfile** is included so App Platform builds a container instead of using the Python buildpack. This ensures the app listens on `0.0.0.0:8080` correctly.
 
-1. In your app's **Settings** → **Commands**, set **Run Command** to:
-   ```bash
-   shiny run app.py -h 0.0.0.0 -p 8080
-   ```
-2. Ensure **HTTP Port** is set to `8080` in the resource configuration.
-3. Add env vars in **Settings** → **App-Level Environment Variables**:
+1. **Source**: GitHub repo, branch `main`, source directory `smart_chef`
+2. **Build**: App Platform auto-detects the Dockerfile and builds the image
+3. **HTTP Port**: Set to `8080` in resource configuration
+4. **Env vars** (Settings → App-Level Environment Variables):
    - `FDC_API_KEY` – USDA FoodData Central API key
    - `OLLAMA_API_KEY` – Ollama Cloud API key
+
+If you deploy without the Dockerfile (buildpack only), set **Run Command** to:
+`shiny run app.py -h 0.0.0.0 -p 8080`
 
 ## Project structure
 
