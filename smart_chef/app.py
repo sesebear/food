@@ -123,13 +123,12 @@ def make_ingredients_card():
     )
 
 
-# Recipe detail page (AI recipe + download)
+# Recipe detail page (recipe + download)
 def make_recipe_detail_ui():
     """Detail view shown when user selects a recipe and generates AI content."""
     return ui.div(
         ui.input_action_button("back_to_table", "← Back to recipes", class_="btn btn-outline-secondary mb-3"),
         ui.div(
-            ui.h4("AI-generated recipe", class_="mt-0"),
             ui.output_ui("ai_recipe_output"),
             ui.output_ui("download_recipe_ui"),
             class_="card card-body mb-3",
@@ -150,7 +149,7 @@ app_ui = ui.page_fluid(
     ),
     make_sidebar(),
     ui.div(
-        make_ingredients_card(),
+        ui.output_ui("ingredients_section"),
         ui.output_ui("main_content"),
         id="main_container",
     ),
@@ -216,19 +215,22 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
                     return
 
     @render.ui
+    def ingredients_section():
+        """Show ingredients card on table view; hide when viewing recipe detail (inputs stay in DOM)."""
+        card = make_ingredients_card()
+        if selected_recipe.get() is not None:
+            return ui.div(card, class_="d-none")
+        return card
+
+    @render.ui
     def main_content():
         """Show table view or detail view based on selection."""
         if selected_recipe.get() is not None:
-            return ui.navset_card_underline(
-                ui.nav_panel("Recipe details", make_recipe_detail_ui(), value="detail"),
-                make_about_tab(),
-                title="Smart Chef",
-                id="main_tabs",
-            )
+            return make_recipe_detail_ui()
         return ui.navset_card_underline(
             make_recipes_tab(),
             make_about_tab(),
-            title="Smart Chef – Recipes & nutrition",
+            title="Smart Chef",
             id="main_tabs",
         )
 
@@ -242,7 +244,7 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
             return ui.p("No results.", class_="text-muted mb-0")
         recipes = out.get("recipes", [])
         n = len(recipes)
-        msg = f"Found {n} recipe(s). Recipes from AI; nutrition from USDA."
+        msg = f"Found {n} recipe(s). Nutrition from USDA."
         return ui.div(
             ui.div(
                 ui.p(msg, " Click ", ui.strong("Generate Recipe"), " on a recipe to see details."),
