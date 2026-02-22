@@ -1,5 +1,6 @@
 # ai_utils.py
 # Smart Chef – Ollama AI helpers for recipe generation and reporting
+# Pairs with 04_deployment/smart_chef (Smart Chef Shiny app)
 
 import json
 import os
@@ -29,8 +30,8 @@ def generate_recipe_from_ingredients(
     recipe_description: str | None = None,
 ) -> tuple[str | None, str | None]:
     """
-    Generates a technical recipe using professional naming conventions.
-    Focuses on step-by-step execution.
+    Generates a recipe for the EXACT dish the user selected from the table.
+    The output must match the selected row's recipe name.
     """
     api_key = ollama_api_key or OLLAMA_API_KEY
     if not api_key:
@@ -38,22 +39,34 @@ def generate_recipe_from_ingredients(
 
     ing_str = ", ".join(ingredients) if ingredients else "common pantry items"
 
+    if recipe_name and recipe_name.strip():
+        dish_instruction = f"""
+CRITICAL – USER SELECTED THIS SPECIFIC DISH:
+The user clicked "Generate Recipe" for this exact row: "{recipe_name.strip()}"
+{f'Additional context: {recipe_description.strip()}' if recipe_description and recipe_description.strip() else ''}
+
+You MUST generate a recipe for THIS EXACT DISH and no other.
+- Your recipe title MUST match or closely reflect: "{recipe_name.strip()}"
+- Do NOT substitute a different dish (e.g., if selected dish is "Chicken with gravy", do NOT generate "Chicken Fried Rice" or "Stir-fry")
+- The ingredients and instructions must be appropriate for this specific dish"""
+    else:
+        dish_instruction = f"Create a practical recipe using these ingredients: {ing_str}."
+
     prompt = f"""
-    You are a professional executive chef. Provide a technical, clear recipe for: "{recipe_name if recipe_name else 'a dish using ' + ing_str}".
-    
-    NAMING RULE: Do not force the ingredient names into the recipe title. Use professional culinary names (e.g., 'Pommes Frites' instead of 'Potato Fries').
-    
-    User Ingredients: {ing_str}.
-    Context: {recipe_description if recipe_description else 'Focus on high-quality execution.'}
+You are a professional executive chef. The user selected a recipe from a table and wants instructions for that specific dish.
 
-    FORMATTING RULES:
-    1. ## [Culinary Recipe Name]
-    2. ### Ingredients: Precise quantities and prep states (e.g., 'diced', 'minced').
-    3. ### Instructions: Numbered, technical steps focusing on heat control, technique, and timing.
-    4. ### Chef's Notes: 2-3 brief tips on technical finesse or storage.
+{dish_instruction}
 
-    TONE: Professional and direct. Bold key instructions.
-    """
+User's available ingredients: {ing_str}
+
+FORMATTING RULES:
+1. ## [Recipe Name] – must match the selected dish above
+2. ### Ingredients: Precise quantities and prep states (e.g., 'diced', 'minced'). Use only ingredients that belong in this dish.
+3. ### Instructions: Numbered, technical steps focusing on heat control, technique, and timing.
+4. ### Chef's Notes: 2-3 brief tips on technical finesse or storage.
+
+TONE: Professional and direct. Bold key instructions.
+"""
     return _call_ollama(prompt, api_key)
 
 def generate_recipes_with_nutrition(
@@ -62,8 +75,8 @@ def generate_recipes_with_nutrition(
     max_recipes: int = 8,
 ) -> tuple[list[dict], str | None]:
     """
-    Uses 'Culinary Identity' logic to force professional naming and 
-    broad semantic expansion (e.g., Potato -> Pommes Frites).
+    Generates recipe ideas using professional naming, main-ingredient logic,
+    and transformation thinking. Used when USDA returns no foods.
     """
     api_key = ollama_api_key or OLLAMA_API_KEY
     if not api_key:
@@ -73,28 +86,33 @@ def generate_recipes_with_nutrition(
     n = min(max(3, max_recipes), 10)
 
     prompt = f"""
-    You are a culinary expert. Generate {n} recipe ideas based on: {ing_str}.
-    
-    CRITICAL NAMING CONSTRAINTS:
-    1. NEVER use the literal ingredient names in the title unless it is part of a formal dish name (e.g., 'Potato Salad' is okay, but 'Potato with Beef' is FORBIDDEN).
-    2. USE ESTABLISHED CULINARY TITLES: If the recipe is for fried potatoes, call it 'Pommes Frites' or 'French Fries'. If it's a potato pancake, call it a 'Latke' or 'Rösti'. 
-    3. SEMANTIC EXPANSION: Identify what these ingredients *become* when processed by a chef. Think of derived forms, classic mother sauces, and international variations.
-    4. MAIN INGREDIENT FOCUS: Ensure the provided ingredients are the primary architectural component of the dish, not a garnish.
+You are a culinary expert. Generate {n} recipe ideas based on: {ing_str}.
 
-    Return ONLY valid JSON:
-    {{
-        "recipes": [
-            {{
-                "recipe_name": "Official Culinary Title", 
-                "calories": 0, 
-                "protein": 0, 
-                "carbohydrate": 0, 
-                "fat": 0, 
-                "recipe_description": "Technical one-sentence summary."
-            }}
-        ]
-    }}
-    """
+SUBSET RULE: Recipes may use a subset of the ingredients. Not every recipe needs all ingredients—e.g., if the user has "chicken, rice, broccoli, garlic," one recipe might use only chicken and garlic, another only rice and broccoli. Each recipe should use ingredients that genuinely belong in that dish.
+
+PROFESSIONAL NAMING RULE:
+Use standard culinary titles from established cuisine. Search your knowledge for real dishes—e.g., Pommes Frites, Dauphinoise, Latkes, Rösti, Gnocchi—rather than constructing generic names like "Potato with oil" or "Fried potato strips."
+
+MAIN INGREDIENT LOGIC:
+The provided ingredients must be the STAR of the dish, not a side or garnish. If the user has "potato," prefer "Classic French Fries" or "Potato Gratin" over "Beef Stew with Potatoes"—because potato is central to the former. Rank recipes where the ingredient is the primary architectural component higher.
+
+TRANSFORMATION COMMAND:
+Think like a chef: "What can I make with this?"—not like a search engine: "What contains this word?" Consider what the ingredient *becomes* through technique: potato → fries, gnocchi, latkes, dauphinoise; flour → pasta, flatbread, batter; egg → frittata, custard, meringue.
+
+Return ONLY valid JSON:
+{{
+    "recipes": [
+        {{
+            "recipe_name": "Standard Culinary Title",
+            "calories": 0,
+            "protein": 0,
+            "carbohydrate": 0,
+            "fat": 0,
+            "recipe_description": "One-sentence technical summary."
+        }}
+    ]
+}}
+"""
     text, err = _call_ollama(prompt, api_key)
     if err or not text:
         return [], err or "No response from AI."

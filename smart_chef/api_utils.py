@@ -2,14 +2,44 @@
 # Smart Chef – API and data helpers for Shiny app
 # Pairs with 04_deployment/smart_chef (Smart Chef Shiny app)
 #
-# Uses nutrition_query.py (USDA FoodData Central) for food nutrition.
-# Uses Ollama AI for recipe ideas when USDA returns no foods, and to enrich.
-# Both API and AI: USDA for nutrition, Ollama for recipe ideas and fallback.
+# AI (Ollama) generates recipes. USDA FoodData Central provides nutrition only.
 
-from nutrition_query import (
-    search_foods_as_recipes,
-    estimate_recipe_nutrition_from_ingredients,
-)
+from nutrition_query import estimate_recipe_nutrition_from_ingredients
+
+# Inappropriate or poisonous ingredients – no recipes generated, user notified
+_INAPPROPRIATE_TERMS = frozenset({
+    "paper", "plastic", "metal", "wood", "rocks", "glass", "dirt", "sand",
+    "bleach", "poison", "posion", "chemicals", "soap", "glue", "paint", "gasoline",
+    "detergent", "ammonia", "lighter fluid", "antifreeze", "rat poison",
+    "cyanide", "arsenic", "lead", "mercury", "pesticide", "herbicide",
+})
+
+
+def _validate_ingredients(ingredients: list[str]) -> tuple[list[str] | None, str | None]:
+    """
+    Check for inappropriate or poisonous ingredients.
+    Returns (inappropriate_list, error_message) if any found, else (None, None).
+    Uses whole-word matching to avoid blocking valid foods (e.g. bleached flour).
+    """
+    found = []
+    for ing in ingredients:
+        lower = ing.lower().strip()
+        if not lower:
+            continue
+        words = set(lower.split())
+        if lower in _INAPPROPRIATE_TERMS:
+            found.append(ing)
+        elif any(term in words for term in _INAPPROPRIATE_TERMS):
+            found.append(ing)
+    if found:
+        unique = list(dict.fromkeys(found))
+        msg = (
+            "No recipes can be generated. One or more ingredients are inappropriate or dangerous: "
+            f"{', '.join(unique)}. Please enter only safe, edible food ingredients."
+        )
+        return unique, msg
+    return None, None
+
 
 # Lazy import to avoid circular dependency
 def _get_ollama_recipes():
@@ -46,26 +76,15 @@ def fetch_recipes_for_ingredients(
     fdc_api_key: str | None = None,
 ) -> tuple[list[dict], str | None, str]:
     """
-    Get recipes/foods with nutrition using USDA FoodData Central and Ollama.
+    Get recipes using AI (Ollama); nutrition facts from USDA only.
 
-    Tries USDA first for food matches. Falls back to Ollama for recipe ideas,
-    then enriches with USDA nutrition when API key is available.
-
-    Parameters
-    ----------
-    ingredients_text : str
-        Comma- or semicolon-separated list of ingredients.
-    max_results_per_search : int
-        Max items per search.
-    ollama_api_key : str | None
-        Ollama API key for recipe ideas when USDA has no foods.
-    fdc_api_key : str | None
-        USDA API key. If None, uses FDC_API_KEY from .env.
+    AI generates recipe ideas. USDA FoodData Central provides nutrition
+    (calories, protein, carbs, fat) for each recipe.
 
     Returns
     -------
     tuple[list[dict], str | None, str]
-        (recipes, error_message, source). source is "usda" or "ollama".
+        (recipes, error_message, source). source is always "ollama".
     """
     if not ingredients_text or not ingredients_text.strip():
         return [], "Please enter at least one ingredient.", ""
@@ -75,60 +94,20 @@ def fetch_recipes_for_ingredients(
     if not ingredients:
         return [], "Please enter at least one ingredient.", ""
 
-    # Try USDA first (nutrition_query.py)
-    combined = " ".join(ingredients[:5])
-    foods, err = search_foods_as_recipes(
-        combined,
-        api_key=fdc_api_key,
-        max_results=max_results_per_search,
-    )
-    if not err and foods:
-        return foods, None, "usda"
+    # Block inappropriate or poisonous ingredients – no recipes, notify user
+    bad, err = _validate_ingredients(ingredients)
+    if bad is not None:
+        return [], err, ""
 
-    # Try individual ingredient searches for more coverage
-    if not err:
-        seen_ids = set()
-        all_foods = list(foods)
-        for f in all_foods:
-            rid = f.get("recipe_id")
-            if rid:
-                seen_ids.add(rid)
-        for ing in ingredients[:3]:
-            if len(all_foods) >= max_results_per_search * 2:
-                break
-            more, err2 = search_foods_as_recipes(ing, api_key=fdc_api_key, max_results=10)
-            if not err2:
-                for f in more:
-                    rid = f.get("recipe_id")
-                    if rid and rid not in seen_ids:
-                        seen_ids.add(rid)
-                        all_foods.append(f)
-        if all_foods:
-            return all_foods, None, "usda"
-
-    # Fall back to Ollama for recipe ideas, enrich with USDA nutrition
-    return _ollama_fallback(
-        ingredients,
-        ollama_api_key,
-        err or "No foods found for these ingredients.",
-        fdc_api_key=fdc_api_key,
-    )
-
-
-def _ollama_fallback(
-    ingredients: list[str],
-    ollama_api_key: str | None,
-    usda_error: str,
-    fdc_api_key: str | None = None,
-) -> tuple[list[dict], str | None, str]:
-    """
-    Fall back to Ollama for recipe ideas when USDA has no foods.
-    Enrich each recipe with USDA nutrition when API key is available.
-    """
+    # AI generates recipes; USDA provides nutrition only
     gen = _get_ollama_recipes()
-    recipes, err = gen(ingredients, ollama_api_key=ollama_api_key, max_recipes=8)
+    recipes, err = gen(
+        ingredients,
+        ollama_api_key=ollama_api_key,
+        max_recipes=min(max_results_per_search, 10),
+    )
     if err:
-        return [], f"USDA had no foods ({usda_error}). Ollama fallback: {err}", ""
+        return [], err, ""
     for r in recipes:
         _enrich_recipe_with_usda_nutrition(r, fdc_api_key)
     return recipes, None, "ollama"

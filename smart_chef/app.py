@@ -57,7 +57,7 @@ def make_recipes_tab():
             ui.div(
                 ui.h4("Recipe nutrition table", class_="mt-0"),
                 ui.p(
-                    "Nutrition information from USDA FoodData Central. "
+                    "Recipes from AI; nutrition from USDA FoodData Central. "
                     "Click ",
                     ui.strong("Generate Recipe"),
                     " on a recipe to see details.",
@@ -87,11 +87,11 @@ def make_about_tab():
             ui.tags.ul(
                 ui.tags.li(
                     ui.a("USDA FoodData Central", href="https://fdc.nal.usda.gov/", target="_blank"),
-                    " – food nutrition",
+                    " – nutrition facts only",
                 ),
                 ui.tags.li(
                     ui.a("Ollama Cloud", href="https://ollama.com/", target="_blank"),
-                    " – AI recipe, report",
+                    " – AI recipe generation",
                 ),
             ),
         ),
@@ -239,16 +239,13 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
             return ui.p("Click ", ui.strong("Find recipes"), " to search.", class_="text-muted mb-0")
         err = out.get("error")
         if err:
-            return ui.div(ui.div(err, class_="alert alert-danger", role="alert"))
+            return ui.p("No results.", class_="text-muted mb-0")
         recipes = out.get("recipes", [])
-        source = out.get("source", "")
         n = len(recipes)
-        if source == "ollama":
-            msg = f"Found {n} recipe(s). Recipe ideas from AI; nutrition from API when available."
-            return ui.div(ui.div(msg, class_="alert alert-success mb-0", role="status"))
+        msg = f"Found {n} recipe(s). Recipes from AI; nutrition from USDA."
         return ui.div(
             ui.div(
-                ui.p("Found ", str(n), " recipe(s). Click ", ui.strong("Generate Recipe"), " on a recipe to see details."),
+                ui.p(msg, " Click ", ui.strong("Generate Recipe"), " on a recipe to see details."),
                 class_="alert alert-success mb-0",
                 role="status",
             )
@@ -258,8 +255,13 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
     def recipe_table():
         """Table of recipes with Generate AI recipe button per row."""
         out = recipes_result.get()
-        if out is None or out.get("error"):
+        if out is None:
             return ui.div(ui.p("Run ", ui.strong("Find recipes"), " to see results.", class_="text-muted"), class_="card card-body")
+        if out.get("error"):
+            return ui.div(
+                ui.div(out.get("error"), class_="alert alert-danger mb-0", role="alert"),
+                class_="card card-body",
+            )
         recipes = out.get("recipes", [])
         if not recipes:
             return ui.div(ui.p("No recipes found.", class_="text-muted"), class_="card card-body")
