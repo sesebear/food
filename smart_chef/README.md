@@ -12,40 +12,48 @@ Shiny app that finds recipes and nutrition data from ingredients you have. AI (O
 | AI        | Ollama Cloud                  |
 | Env       | python-dotenv, `.env`         |
 
-## Installation
+## Usage Instructions
 
-Assumes a fresh environment.
+### 1. Install dependencies
 
-1. **Prerequisites**: Python 3.10+, pip.
-2. **Clone** (or navigate to project):
-   ```bash
-   cd smart_chef
-   ```
-3. **Dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. **Environment**: Copy `.env.example` to `.env` and set:
-   - `FDC_API_KEY` – required for nutrition (get key at [USDA API key signup](https://fdc.nal.usda.gov/api-key-signup))
-   - `OLLAMA_API_KEY` – required for recipe generation (get key at [Ollama signup](ollama.com))
+```bash
+cd smart_chef
+pip install -r requirements.txt
+```
 
-## Usage
+### 2. Set up API keys
 
-Run the Shiny app:
+Create a `.env` file in the `smart_chef` folder:
+
+```
+FDC_API_KEY=your_usda_key_here
+OLLAMA_API_KEY=your_ollama_key_here
+```
+
+- USDA key: https://fdc.nal.usda.gov/api-key-signup  
+- Ollama key: https://ollama.com
+
+### 3. Run the app
 
 ```bash
 shiny run app.py
 ```
 
-Then open the URL shown (e.g. `http://127.0.0.1:8000`). Enter ingredients in the sidebar (comma-separated), click **Find recipes** for nutrition data, and **Generate AI recipe** for an Ollama-generated recipe.
+### 4. Use the app
 
-**Test nutrition_query.py** (USDA FoodData Central):
+1. Open the URL shown (e.g. `http://127.0.0.1:8000`).
+2. Enter ingredients (comma- or semicolon-separated).
+3. Click **Find recipes**.
+4. Click **Generate Recipe** on a row to see full instructions.
+5. Use **Download Recipe** to save the recipe as markdown.
+
+### Test USDA integration
 
 ```bash
 python nutrition_query.py
 ```
 
-Requires FDC_API_KEY and OLLAMA_API_KEY in .env.
+Requires `FDC_API_KEY` and `OLLAMA_API_KEY` in `.env`.
 
 ## Project structure
 
