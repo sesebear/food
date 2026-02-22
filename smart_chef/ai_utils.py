@@ -1,6 +1,5 @@
 # ai_utils.py
 # Smart Chef – Ollama AI helpers for recipe generation and reporting
-# Pairs with 04_deployment/smart_chef (Smart Chef Shiny app)
 
 import json
 import os
