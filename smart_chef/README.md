@@ -47,6 +47,19 @@ python nutrition_query.py
 
 Requires FDC_API_KEY and OLLAMA_API_KEY in .env.
 
+## Deployment (Digital Ocean App Platform)
+
+If the app fails health checks with "Application not responding on port 8080":
+
+1. In your app's **Settings** → **Commands**, set **Run Command** to:
+   ```bash
+   shiny run app.py -h 0.0.0.0 -p 8080
+   ```
+2. Ensure **HTTP Port** is set to `8080` in the resource configuration.
+3. Add env vars in **Settings** → **App-Level Environment Variables**:
+   - `FDC_API_KEY` – USDA FoodData Central API key
+   - `OLLAMA_API_KEY` – Ollama Cloud API key
+
 ## Project structure
 
 | File             | Purpose                                  |
