@@ -1,0 +1,123 @@
+/* styles.css
+   Smart Chef – custom styles for modern, attractive UI
+   Pairs with 04_deployment/smart_chef/app.py
+*/
+
+:root {
+  --smart-chef-primary: #2d6a4f;
+  --smart-chef-primary-light: #40916c;
+  --smart-chef-accent: #d4a373;
+  --smart-chef-bg: #f8f9fa;
+  --smart-chef-card: #ffffff;
+  --smart-chef-text: #1b4332;
+  --smart-chef-muted: #6c757d;
+}
+
+/* Typography */
+body {
+  font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--smart-chef-text);
+  background-color: var(--smart-chef-bg);
+}
+
+/* Sidebar */
+.bslib-sidebar-layout .bslib-sidebar {
+  background: linear-gradient(180deg, #1b4332 0%, #2d6a4f 100%);
+  color: #fff;
+}
+
+.bslib-sidebar-layout .bslib-sidebar .form-label,
+.bslib-sidebar-layout .bslib-sidebar label {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.bslib-sidebar-layout .bslib-sidebar .form-control,
+.bslib-sidebar-layout .bslib-sidebar .form-select {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.bslib-sidebar-layout .bslib-sidebar .btn-primary {
+  background-color: var(--smart-chef-accent);
+  border-color: var(--smart-chef-accent);
+  color: #1b4332;
+  font-weight: 600;
+}
+
+.bslib-sidebar-layout .bslib-sidebar .btn-primary:hover {
+  background-color: #e9b87a;
+  border-color: #e9b87a;
+  color: #1b4332;
+}
+
+.bslib-sidebar-layout .bslib-sidebar .btn-outline-primary {
+  border-color: var(--smart-chef-accent);
+  color: var(--smart-chef-accent);
+}
+
+.bslib-sidebar-layout .bslib-sidebar .btn-outline-primary:hover {
+  background-color: rgba(212, 163, 115, 0.2);
+  border-color: var(--smart-chef-accent);
+  color: var(--smart-chef-accent);
+}
+
+/* Cards */
+.card {
+  border-radius: 12px;
+  border: 1px solid rgba(45, 106, 79, 0.15);
+  box-shadow: 0 2px 8px rgba(27, 67, 50, 0.06);
+}
+
+.card-header {
+  font-weight: 600;
+  color: var(--smart-chef-text);
+  border-bottom: 1px solid rgba(45, 106, 79, 0.1);
+}
+
+/* Nav tabs */
+.nav-link {
+  font-weight: 500;
+  color: var(--smart-chef-muted);
+}
+
+.nav-link.active {
+  color: var(--smart-chef-primary);
+  font-weight: 600;
+}
+
+/* Alerts */
+.alert-success {
+  background-color: rgba(45, 106, 79, 0.12);
+  border-color: rgba(45, 106, 79, 0.3);
+  color: var(--smart-chef-text);
+}
+
+.alert-warning {
+  background-color: rgba(212, 163, 115, 0.15);
+  border-color: rgba(212, 163, 115, 0.4);
+}
+
+/* Markdown content */
+.markdown-recipe,
+.markdown-report {
+  line-height: 1.6;
+  max-width: 720px;
+}
+
+.markdown-recipe h2,
+.markdown-report h2 {
+  color: var(--smart-chef-primary);
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.markdown-recipe ul,
+.markdown-report ul {
+  padding-left: 1.5rem;
+}
+
+/* Data grid */
+.data-grid {
+  border-radius: 8px;
+  overflow: hidden;
+}
