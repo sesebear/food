@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "locale": "en_US.UTF-8",
+  "metadata": {
+    "appmode": "python-api",
+    "entrypoint": "app"
+  },
+  "python": {
+    "version": "3.12.3",
+    "package_manager": {
+      "name": "pip",
+      "version": "26.0",
+      "package_file": "requirements.txt"
+    }
+  },
+  "files": {
+    "requirements.txt": {
+      "checksum": "a06946b9b1381b2d9170ff6f4d1d2265"
+    },
+    ".env": {
+      "checksum": "f9b06e0754372eb6f00ea6c3fecbcb07"
+    },
+    "README.md": {
+      "checksum": "d92922f76d0993d48eba5a014ca13eba"
+    },
+    "ai_utils.py": {
+      "checksum": "169151c8bc50041c1fbf4e55e6bc6ed3"
+    },
+    "api_utils.py": {
+      "checksum": "ea985f4457eb40f6d3e95c620c7bb706"
+    },
+    "app.py": {
+      "checksum": "8d7649f51af552863160dc773c2c33f8"
+    },
+    "nutrition_query.py": {
+      "checksum": "46c41e54d5778a2ba4041f637fb7284b"
+    },
+    "styles.css": {
+      "checksum": "29c7aa11bd395963a6a9fc8eb72cded6"
+    }
+  }
+}
