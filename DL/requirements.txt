@@ -1,0 +1,14 @@
+shiny
+shinywidgets
+shinyswatch
+faicons
+fastapi
+uvicorn[standard]
+supabase
+httpx
+plotly
+pydeck
+pandas
+numpy
+python-dotenv
+requests
