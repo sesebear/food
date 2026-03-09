@@ -30,8 +30,9 @@ SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "smollm2:1.7b")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama")
+OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "")
+OLLAMA_CLOUD_URL = "https://ollama.com/api/chat"
+OLLAMA_CLOUD_MODEL = "gpt-oss:20b-cloud"
 
 ## 0.3 Initialize App & Client #################################
 
@@ -298,25 +299,24 @@ def get_ai_summary(
         {"role": "user", "content": user_prompt},
     ]
 
-    if OPENAI_API_KEY and LLM_PROVIDER == "openai":
+    if OLLAMA_API_KEY:
         try:
             resp = requests.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers={"Authorization": f"Bearer {OPENAI_API_KEY}"},
-                json={"model": "gpt-4o-mini", "messages": messages, "max_tokens": 500},
-                timeout=60,
+                OLLAMA_CLOUD_URL,
+                headers={"Authorization": f"Bearer {OLLAMA_API_KEY}", "Content-Type": "application/json"},
+                json={"model": OLLAMA_CLOUD_MODEL, "messages": messages, "stream": False},
+                timeout=120,
             )
             resp.raise_for_status()
-            ai_text = resp.json()["choices"][0]["message"]["content"]
-            model_used = "gpt-4o-mini"
+            ai_text = resp.json()["message"]["content"]
+            model_used = OLLAMA_CLOUD_MODEL
         except Exception as e:
-            ai_text = f"⚠️ OpenAI API error: {str(e)}"
-            model_used = "gpt-4o-mini"
+            ai_text = f"⚠️ Ollama Cloud API error: {str(e)}"
+            model_used = OLLAMA_CLOUD_MODEL
     else:
         try:
             resp = requests.post(
                 f"{OLLAMA_HOST}/api/chat",
-                headers={"ngrok-skip-browser-warning": "true"},
                 json={"model": OLLAMA_MODEL, "messages": messages, "stream": False},
                 timeout=120,
             )

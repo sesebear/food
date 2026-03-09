@@ -4,14 +4,14 @@ An AI-powered congestion monitoring pipeline for a city transportation authority
 
 **Deployed App:** <https://connect.systems-apps.com/content/05b53a5a-aaf2-4d7c-a7e3-f90b3189123a>
 
-> **Note:** The AI summary feature requires Ollama running locally and tunneled via ngrok. For the AI insights to work on the deployed app, the host machine must be on with both `ollama serve` and `ngrok http 11434` running. The dashboard, map, charts, and all other features work independently without Ollama.
+> **Note:** The deployed app uses Ollama Cloud (`gpt-oss:20b-cloud`) for AI summaries. For local development, the app defaults to a local Ollama instance (smollm2:1.7b) — make sure `ollama serve` is running locally.
 
 ---
 
 ## System Architecture
 
 ```
-Supabase (PostgreSQL)  →  FastAPI REST API  →  Shiny Dashboard  →  Ollama AI
+Supabase (PostgreSQL)  →  FastAPI REST API  →  Shiny Dashboard  →  Ollama Cloud AI
        ↑                        ↑                    ↑                 ↑
   Data storage            Data access layer     User interface    AI summaries
 ```
@@ -21,7 +21,7 @@ The pipeline flows left to right:
 1. **Supabase** stores two tables — `locations` (20 intersections across 5 zones) and `congestion_readings` (~13 K time-series records over 14 days).
 2. **FastAPI** exposes filtered reads (by zone, time window, severity) and a `/summary` endpoint that aggregates data and forwards it to Ollama.
 3. **Shiny for Python** renders an interactive light-themed dashboard with a deck.gl map, metric cards, a congestion heatmap, per-zone trend lines, and a sidebar for filters and AI questions.
-4. **Ollama** (smollm2:1.7b) receives a compact JSON summary of the queried data and returns a short, actionable narrative.
+4. **Ollama Cloud** (`gpt-oss:20b-cloud`) receives a compact JSON summary of the queried data and returns a short, actionable narrative. Locally, the app falls back to a local Ollama instance (`smollm2:1.7b`).
 
 ---
 
@@ -32,7 +32,7 @@ The pipeline flows left to right:
 | Database    | Supabase (PostgreSQL)                       |
 | API         | FastAPI + Uvicorn                           |
 | Dashboard   | Shiny for Python, Plotly, deck.gl + Maplibre GL JS |
-| AI          | Ollama (smollm2:1.7b)                       |
+| AI          | Ollama Cloud (gpt-oss:20b-cloud) / local Ollama (smollm2:1.7b) |
 | Data gen    | Python (pandas, random, math)               |
 | Environment | python-dotenv, `.env`                       |
 
