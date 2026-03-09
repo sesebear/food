@@ -1,0 +1,12 @@
+{
+    "https://connect.systems-apps.com/": {
+        "server_url": "https://connect.systems-apps.com/",
+        "filename": "/Users/sese/Desktop/Classes/SYSEN-5381/food/DL",
+        "app_url": "https://connect.systems-apps.com/content/7367dd3c-8ef8-42eb-a0bf-11aad5253fdf/",
+        "app_id": "126",
+        "app_guid": "7367dd3c-8ef8-42eb-a0bf-11aad5253fdf",
+        "title": "0DL",
+        "app_mode": "python-fastapi",
+        "app_store_version": 1
+    }
+}

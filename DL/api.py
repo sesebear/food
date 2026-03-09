@@ -30,6 +30,8 @@ SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "smollm2:1.7b")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama")
 
 ## 0.3 Initialize App & Client #################################
 
@@ -47,7 +49,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-db = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
+db = None
+db_init_error = None
+if SUPABASE_URL and SUPABASE_KEY:
+    try:
+        db = create_client(SUPABASE_URL, SUPABASE_KEY)
+    except Exception as e:
+        db_init_error = str(e)
+        print(f"Failed to initialize Supabase client: {e}")
 
 
 # 1. HELPER FUNCTIONS ###################################
@@ -65,7 +74,13 @@ def require_db():
 @app.get("/health")
 def health():
     """Health check endpoint."""
-    return {"status": "ok", "database": db is not None}
+    return {
+        "status": "ok",
+        "database": db is not None,
+        "supabase_url_set": bool(SUPABASE_URL),
+        "supabase_key_set": bool(SUPABASE_KEY),
+        "db_init_error": db_init_error,
+    }
 
 
 ## 2.2 Locations #################################
@@ -278,29 +293,47 @@ def get_ai_summary(
         "Keep it under 200 words."
     )
 
-    # Call Ollama
-    try:
-        ollama_url = f"{OLLAMA_HOST}/api/chat"
-        body = {
-            "model": OLLAMA_MODEL,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            "stream": False,
-        }
-        resp = requests.post(ollama_url, json=body, timeout=120)
-        resp.raise_for_status()
-        ai_text = resp.json()["message"]["content"]
-    except requests.exceptions.ConnectionError:
-        ai_text = (
-            "⚠️ Could not connect to Ollama. Make sure it is running at "
-            f"{OLLAMA_HOST}. You can start it with: `ollama serve`"
-        )
-    except Exception as e:
-        ai_text = f"⚠️ AI summary unavailable: {str(e)}"
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
+    ]
 
-    return {"summary": ai_text, "stats": stats, "model": OLLAMA_MODEL}
+    if OPENAI_API_KEY and LLM_PROVIDER == "openai":
+        try:
+            resp = requests.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={"Authorization": f"Bearer {OPENAI_API_KEY}"},
+                json={"model": "gpt-4o-mini", "messages": messages, "max_tokens": 500},
+                timeout=60,
+            )
+            resp.raise_for_status()
+            ai_text = resp.json()["choices"][0]["message"]["content"]
+            model_used = "gpt-4o-mini"
+        except Exception as e:
+            ai_text = f"⚠️ OpenAI API error: {str(e)}"
+            model_used = "gpt-4o-mini"
+    else:
+        try:
+            resp = requests.post(
+                f"{OLLAMA_HOST}/api/chat",
+                headers={"ngrok-skip-browser-warning": "true"},
+                json={"model": OLLAMA_MODEL, "messages": messages, "stream": False},
+                timeout=120,
+            )
+            resp.raise_for_status()
+            ai_text = resp.json()["message"]["content"]
+            model_used = OLLAMA_MODEL
+        except requests.exceptions.ConnectionError:
+            ai_text = (
+                "⚠️ Could not connect to Ollama. Make sure it is running at "
+                f"{OLLAMA_HOST}. You can start it with: `ollama serve`"
+            )
+            model_used = OLLAMA_MODEL
+        except Exception as e:
+            ai_text = f"⚠️ AI summary unavailable: {str(e)}"
+            model_used = OLLAMA_MODEL
+
+    return {"summary": ai_text, "stats": stats, "model": model_used}
 
 
 # 3. RUN ###################################

@@ -25,7 +25,7 @@ from shinywidgets import output_widget, render_widget
 
 if os.path.exists(".env"): load_dotenv()
 
-API_BASE = f"http://{os.getenv('API_HOST', '127.0.0.1')}:{os.getenv('API_PORT', '8000')}"
+API_BASE = os.getenv("API_BASE_URL") or f"http://{os.getenv('API_HOST', '127.0.0.1')}:{os.getenv('API_PORT', '8000')}"
 
 ## 0.3 Custom CSS #################################
 
