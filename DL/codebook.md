@@ -1,6 +1,19 @@
 # Codebook — City Congestion Tracker
 
-Data dictionary for the two Supabase tables used by the congestion tracking pipeline.
+Data dictionary for the Supabase tables, test datasets, and pipeline files in this project.
+
+---
+
+## Pipeline Files
+
+| File               | Purpose                                                                                     |
+|--------------------|---------------------------------------------------------------------------------------------|
+| `schema.sql`       | SQL DDL to create the `locations` and `congestion_readings` tables in Supabase (with indexes and RLS policies). Run once in the Supabase SQL Editor. |
+| `generate_data.py` | Generates synthetic congestion data for 20 locations over 14 days and seeds it into Supabase. Also supports `--csv` to export to `test_data/`. |
+| `api.py`           | FastAPI REST API. Connects to Supabase, exposes filtered query endpoints (`/locations`, `/congestion`, `/congestion/stats`), and a `/summary` endpoint that sends aggregated data to Ollama for AI analysis. |
+| `app.py`           | Shiny for Python dashboard. Fetches data from the API, renders an interactive deck.gl map, Plotly charts (bar, heatmap, line), metric cards, and an AI Insights panel. Sidebar provides zone, severity, time range, road type, and hour range filters. |
+| `requirements.txt` | Python dependencies — pin-free for latest compatibility. Install with `pip install -r requirements.txt`. |
+| `.env.example`     | Template for environment variables: `SUPABASE_URL`, `SUPABASE_KEY`, `OLLAMA_HOST`, `OLLAMA_MODEL`, `API_HOST`, `API_PORT`. |
 
 ---
 
@@ -60,3 +73,39 @@ All data is **synthetic**, produced by `generate_data.py`. The congestion model 
 - **Gaussian noise** — ±8 points of random variation per reading for realism
 
 Speed, volume, and delay are derived from the congestion level using simple scaling functions.
+
+---
+
+## Test Datasets (`test_data/`)
+
+Three CSV files provide representative subsets of the full database for offline review, grading, and reproducibility.
+
+### test1_all_zones_7days.csv
+
+| Column             | Type      | Description                                          |
+|--------------------|-----------|------------------------------------------------------|
+| `location_id`      | INTEGER   | FK to `locations.id`                                 |
+| `name`             | TEXT      | Intersection name                                    |
+| `zone`             | TEXT      | City zone                                            |
+| `road_type`        | TEXT      | Road classification                                  |
+| `timestamp`        | TIMESTAMPTZ | When the reading was recorded (ISO 8601, UTC)      |
+| `congestion_level` | INTEGER   | 0–100 congestion score                               |
+| `speed_mph`        | FLOAT     | Average speed (mph)                                  |
+| `volume`           | INTEGER   | Vehicles per interval                                |
+| `delay_minutes`    | FLOAT     | Additional travel delay (minutes)                    |
+
+**Rows:** 16 — samples from all 5 zones at morning rush, midday, evening rush, and overnight.
+
+### test2_downtown_rush_hour.csv
+
+Same columns as test1. **Rows:** 16 — 4 Downtown locations at 30-min intervals during the 7:00–9:00 AM weekday rush.
+
+### test3_weekend_vs_weekday.csv
+
+Same columns as test1, plus:
+
+| Column     | Type | Description                            |
+|------------|------|----------------------------------------|
+| `day_type` | TEXT | `weekday` or `weekend` label           |
+
+**Rows:** 16 — paired weekday/weekend readings for 4 locations across 4 zones to highlight temporal patterns.

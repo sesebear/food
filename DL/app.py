@@ -17,8 +17,7 @@ import httpx
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import pydeck as pdk
-import base64
+import html as html_mod
 from shiny import App, reactive, render, ui
 from shinywidgets import output_widget, render_widget
 

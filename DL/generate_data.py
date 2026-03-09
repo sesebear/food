@@ -225,20 +225,24 @@ def seed_recent_24h():
 # 6. EXPORT TO CSV (OPTIONAL) ###################################
 
 def export_csv():
-    """Export generated data to CSV files for reference."""
+    """Export generated data to CSV files in test_data/ for offline review."""
     import pandas as pd
 
-    # Generate dummy IDs for CSV export
+    out_dir = os.path.join(os.path.dirname(__file__) or ".", "test_data")
+    os.makedirs(out_dir, exist_ok=True)
+
     location_ids = list(range(1, len(LOCATIONS) + 1))
     locations_df = pd.DataFrame(LOCATIONS)
     locations_df.insert(0, "id", location_ids)
-    locations_df.to_csv("data_locations.csv", index=False)
-    print("📁 Exported data_locations.csv")
+    loc_path = os.path.join(out_dir, "locations.csv")
+    locations_df.to_csv(loc_path, index=False)
+    print(f"📁 Exported {loc_path}")
 
     readings = generate_readings(location_ids, days=14, interval_minutes=30)
     readings_df = pd.DataFrame(readings)
-    readings_df.to_csv("data_readings.csv", index=False)
-    print(f"📁 Exported data_readings.csv ({len(readings_df)} rows)")
+    read_path = os.path.join(out_dir, "readings.csv")
+    readings_df.to_csv(read_path, index=False)
+    print(f"📁 Exported {read_path} ({len(readings_df)} rows)")
 
 
 # 6. RUN ###################################

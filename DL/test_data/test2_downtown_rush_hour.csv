@@ -1,0 +1,17 @@
+location_id,name,zone,road_type,timestamp,congestion_level,speed_mph,volume,delay_minutes
+1,Main St & 1st Ave,Downtown,arterial,2026-03-03T07:00:00+00:00,72,16.8,230,10.5
+1,Main St & 1st Ave,Downtown,arterial,2026-03-03T07:30:00+00:00,76,15.5,240,12.0
+1,Main St & 1st Ave,Downtown,arterial,2026-03-03T08:00:00+00:00,81,13.9,258,14.8
+1,Main St & 1st Ave,Downtown,arterial,2026-03-03T08:30:00+00:00,85,12.5,270,18.2
+1,Main St & 1st Ave,Downtown,arterial,2026-03-03T09:00:00+00:00,79,14.8,248,13.1
+2,Broadway & 5th Ave,Downtown,arterial,2026-03-03T07:00:00+00:00,74,16.2,235,11.2
+2,Broadway & 5th Ave,Downtown,arterial,2026-03-03T07:30:00+00:00,80,14.0,255,14.0
+2,Broadway & 5th Ave,Downtown,arterial,2026-03-03T08:00:00+00:00,88,11.8,278,20.5
+2,Broadway & 5th Ave,Downtown,arterial,2026-03-03T08:30:00+00:00,91,10.5,290,23.1
+2,Broadway & 5th Ave,Downtown,arterial,2026-03-03T09:00:00+00:00,83,13.2,262,16.4
+3,Center Blvd & Park Rd,Downtown,collector,2026-03-03T07:00:00+00:00,62,20.5,190,5.8
+3,Center Blvd & Park Rd,Downtown,collector,2026-03-03T08:00:00+00:00,70,17.5,220,9.2
+3,Center Blvd & Park Rd,Downtown,collector,2026-03-03T09:00:00+00:00,65,19.2,200,7.0
+4,Market St & 3rd Ave,Downtown,arterial,2026-03-03T07:00:00+00:00,69,17.8,218,8.5
+4,Market St & 3rd Ave,Downtown,arterial,2026-03-03T08:00:00+00:00,78,15.0,245,12.6
+4,Market St & 3rd Ave,Downtown,arterial,2026-03-03T09:00:00+00:00,73,16.5,232,10.8
