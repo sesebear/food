@@ -2,6 +2,10 @@
 
 An AI-powered congestion monitoring pipeline for a city transportation authority. Stores synthetic congestion data in Supabase, serves it through a FastAPI REST API, visualizes it in a Shiny for Python dashboard with an interactive deck.gl map, and generates plain-language insights with Ollama.
 
+**Deployed App:** <https://connect.systems-apps.com/content/05b53a5a-aaf2-4d7c-a7e3-f90b3189123a>
+
+> **Note:** The AI summary feature requires Ollama running locally and tunneled via ngrok. For the AI insights to work on the deployed app, the host machine must be on with both `ollama serve` and `ngrok http 11434` running. The dashboard, map, charts, and all other features work independently without Ollama.
+
 ---
 
 ## System Architecture
