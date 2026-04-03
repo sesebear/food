@@ -108,13 +108,20 @@ def retrieve_nutrition_context(ingredients: list[str]) -> str:
     from the local food_data.json knowledge base. Returns a formatted text
     block the rating agent uses to evaluate Nutritional Balance.
     """
+    print("\n" + "=" * 60)
+    print("📚 RAG RETRIEVAL — Searching USDA Foundation Foods knowledge base")
+    print(f"   Knowledge base: data/food_data.json ({len(_load_food_db())} foods indexed)")
+    print(f"   Query ingredients: {ingredients[:8]}")
+    print("-" * 60)
+
     lines = ["NUTRITIONAL REFERENCE DATA (from USDA Foundation Foods knowledge base):"]
     for ing in ingredients[:8]:
         results = search_food_data(ing, max_results=2)
         if results:
+            print(f"   🔍 Search '{ing}' → {len(results)} match(es):")
             for r in results:
                 n = r["nutrients"]
-                lines.append(
+                line = (
                     f"- {r['description']} ({r['category']}): "
                     f"{n.get('calories', '?')} kcal, "
                     f"{n.get('protein', '?')}g protein, "
@@ -122,8 +129,13 @@ def retrieve_nutrition_context(ingredients: list[str]) -> str:
                     f"{n.get('fat', '?')}g fat, "
                     f"{n.get('fiber', '?')}g fiber"
                 )
+                print(f"      {line}")
+                lines.append(line)
         else:
+            print(f"   🔍 Search '{ing}' → no matches in knowledge base")
             lines.append(f"- {ing}: no reference data found in knowledge base")
+
+    print("=" * 60 + "\n")
     return "\n".join(lines)
 
 
@@ -210,14 +222,37 @@ def rate_recipe(
     if not api_key:
         return None, "OLLAMA_API_KEY not set."
 
+    print("\n" + "🤖" * 30)
+    print("AGENT 2: RECIPE CRITIC — Rating pipeline started")
+    print(f"   Recipe: {recipe_name}")
+    print(f"   Ingredients: {', '.join(user_ingredients)}")
+    print("🤖" * 30)
+
     # --- RAG: retrieve nutritional reference data from knowledge base ---
+    print("\n📖 Step 1/3: RAG Retrieval")
     rag_context = retrieve_nutrition_context(user_ingredients)
 
     # --- Function Calling: get USDA nutrition for key ingredients ---
+    print("\n" + "=" * 60)
+    print("🔧 Step 2/3: FUNCTION CALLING — get_ingredient_nutrition()")
+    print(f"   Tool: get_ingredient_nutrition")
+    print(f"   Description: Queries USDA FoodData Central API for real-time nutrition")
+    print("-" * 60)
+
     nutrition_reports = []
     for ing in user_ingredients[:4]:
+        print(f"   ⚡ Calling get_ingredient_nutrition('{ing}')...")
         report = get_ingredient_nutrition(ing)
         nutrition_reports.append(report)
+        if "error" in report:
+            print(f"      → Error: {report['error']}")
+        else:
+            print(f"      → {report.get('calories', '?')} kcal, "
+                  f"{report.get('protein', '?')}g protein, "
+                  f"{report.get('carbohydrate', '?')}g carbs, "
+                  f"{report.get('fat', '?')}g fat")
+
+    print("=" * 60 + "\n")
 
     nutrition_text = "USDA NUTRITION LOOKUP RESULTS (via function calling):\n"
     for nr in nutrition_reports:
@@ -230,6 +265,8 @@ def rate_recipe(
                 f"{nr.get('carbohydrate', '?')}g carbs, "
                 f"{nr.get('fat', '?')}g fat\n"
             )
+
+    print("🧠 Step 3/3: Sending prompt to Ollama Cloud (gpt-oss:20b-cloud)...")
 
     # --- Build the Agent 2 prompt ---
     prompt = f"""You are a professional recipe critic and food scientist. Rate the following recipe on a scale of 1.0 to 5.0 across three categories.

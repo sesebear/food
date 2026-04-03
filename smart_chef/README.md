@@ -2,96 +2,63 @@
 
 Shiny for Python app that generates recipes from ingredients you have on hand, then rates each recipe with a visual scorecard. Uses a multi-agent workflow: Agent 1 (Ollama) generates the recipe, Agent 2 rates it on three dimensions using RAG and function calling. USDA FoodData Central provides nutrition data.
 
-## Tech stack
+**Deployed App:** <https://connect.systems-apps.com/content/035e816b-7940-4f4a-8505-051fc59af618>
 
-| Layer | Technology |
-|-------|------------|
-| Language | Python 3.10+ |
-| Web UI | Shiny for Python |
-| API | USDA FoodData Central (nutrition data) |
-| AI | Ollama Cloud (recipe generation + rating) |
-| RAG Data | `data/food_data.json` (365 USDA Foundation Foods) |
-| Env | python-dotenv, `.env` |
+---
 
-## Installation
+## System Architecture
 
-Assumes a fresh environment.
+### Agent Roles
 
-1. **Prerequisites**: Python 3.10+, pip.
-2. **Install dependencies**:
+| Agent | Role | Model | Input | Output |
+|-------|------|-------|-------|--------|
+| **Agent 1: Recipe Chef** | Generates a full professional recipe for the dish the user selected | Ollama Cloud (`gpt-oss:20b-cloud`) | User's ingredients + selected recipe name | Formatted markdown recipe with ingredients, step-by-step instructions, and chef's notes |
+| **Agent 2: Recipe Critic** | Evaluates the generated recipe on three dimensions using RAG and function calling | Ollama Cloud (`gpt-oss:20b-cloud`) | Agent 1's recipe text + RAG context + USDA nutrition data | Structured JSON rating (1.0–5.0 per category) with AI-generated summary |
 
-```bash
-cd smart_chef
-pip install -r requirements.txt
-```
-
-3. **API keys**: Create a `.env` file in the `smart_chef` folder:
+### Workflow
 
 ```
-FDC_API_KEY=your_usda_key_here
-OLLAMA_API_KEY=your_ollama_key_here
-```
-
-- USDA key: https://fdc.nal.usda.gov/api-key-signup
-- Ollama key: https://ollama.com
-
-## Usage
-
-Run the app from the `smart_chef` directory:
-
-```bash
-shiny run app.py
-```
-
-Open the URL shown in the terminal (e.g. `http://127.0.0.1:8000`).
-
-### Navigating the app
-
-1. **Enter ingredients** in the text box (comma- or semicolon-separated, e.g. `chicken, rice, broccoli, olive oil`).
-2. Click **Find recipes** — the app generates recipe ideas via Ollama and enriches them with USDA nutrition data. Results appear in a table with calories, protein, carbs, and fat per recipe.
-3. Click **Generate Recipe** on any row — this triggers the two-agent pipeline:
-   - **Agent 1** generates a full recipe with ingredients, step-by-step instructions, and chef's notes.
-   - **Agent 2** rates the recipe and displays a **rating card** to the right of the recipe with an overall score and category breakdowns.
-4. The **rating card** shows scores (1.0–5.0) for Ease of Preparation, Completeness, and Nutritional Balance, plus a short AI-generated summary explaining the scores.
-5. Click **Download Recipe** to save the recipe as a `.md` file.
-6. Click **← Back to recipes** to return to the table and try another recipe.
-
-## Multi-Agent Architecture
-
-```
-User clicks "Generate Recipe"
+User enters ingredients → clicks "Find recipes"
         │
         ▼
-┌─────────────────────────┐
-│  AGENT 1: Recipe Chef   │
-│  Generates a full recipe │
-│  for the selected dish   │
-└────────┬────────────────┘
-         │  recipe text
+┌──────────────────────────────────┐
+│  Ollama Cloud generates recipe   │
+│  ideas; USDA enriches nutrition  │
+└────────┬─────────────────────────┘
+         │  recipe table displayed
          ▼
-┌─────────────────────────┐
-│  AGENT 2: Recipe Critic │
-│  Rates the recipe on    │
-│  3 categories using     │
-│  RAG + function calling │
-└────────┬────────────────┘
+User clicks "Generate Recipe" on a row
+        │
+        ▼
+┌─────────────────────────────────┐
+│  AGENT 1: Recipe Chef           │
+│  Sends recipe name + ingredients│
+│  to Ollama Cloud → returns full │
+│  recipe in markdown format      │
+└────────┬────────────────────────┘
+         │  recipe text (markdown)
+         ▼
+┌─────────────────────────────────┐
+│  AGENT 2: Recipe Critic         │
+│  1. RAG: searches food_data.json│
+│     for nutritional references  │
+│  2. Function calling: queries   │
+│     USDA API per ingredient     │
+│  3. Sends all context to Ollama │
+│     Cloud → returns JSON rating │
+└────────┬────────────────────────┘
          │  structured rating (JSON)
          ▼
-┌─────────────────────────┐
-│  RATING CARD UI         │
-│  Visual scorecard with  │
-│  overall + category bars│
-│  + AI summary           │
-└─────────────────────────┘
+┌─────────────────────────────────┐
+│  RATING CARD UI                 │
+│  Visual scorecard: overall score│
+│  + category bars + AI summary   │
+└─────────────────────────────────┘
 ```
 
-### Agent 1: Recipe Chef
+The two agents run sequentially — Agent 2 cannot start until Agent 1 returns a recipe. This pipeline is orchestrated in `app.py` (lines 300–330).
 
-Generates a professional recipe for the exact dish the user selected. Uses the user's available ingredients and the recipe name from the table to produce formatted markdown with ingredients, instructions, and chef's notes.
-
-### Agent 2: Recipe Critic
-
-Evaluates the generated recipe across three categories (1.0–5.0 scale):
+### Rating Categories
 
 | Category | What It Measures |
 |----------|-----------------|
@@ -101,29 +68,126 @@ Evaluates the generated recipe across three categories (1.0–5.0 scale):
 
 The overall score is the average of the three categories. A short AI-generated summary explains the reasoning behind the scores.
 
-## RAG Integration
+---
 
-Agent 2 uses Retrieval-Augmented Generation to evaluate nutritional balance. The file `data/food_data.json` contains 365 USDA Foundation Foods with detailed nutritional profiles across 19 food categories. Before rating, the system searches this knowledge base for each of the user's ingredients and retrieves reference nutritional data (calories, protein, carbs, fat, fiber). This context is injected into Agent 2's prompt so it can compare the recipe's nutritional profile against real USDA reference values.
+## RAG Data Source
 
-## Function Calling
+**Knowledge base:** `data/food_data.json` — 365 USDA Foundation Foods with detailed nutritional profiles across 19 food categories.
 
-Agent 2 uses `get_ingredient_nutrition` to gather structured nutrition data before rating:
+**Source:** Downloaded from the [USDA FoodData Central](https://fdc.nal.usda.gov/) Foundation Foods dataset. Each food entry includes nutrient amounts for calories, protein, carbohydrate, fat, and fiber.
+
+**How it works:**
+
+1. At import time, `rating_utils.py` loads and indexes all 365 foods from `food_data.json`.
+2. When Agent 2 rates a recipe, the `retrieve_nutrition_context()` function performs keyword search over the knowledge base for each of the user's ingredients (up to 8).
+3. For each ingredient, the top 2 matching foods are retrieved with their full nutritional profiles.
+4. These results are formatted into a text block and injected into Agent 2's prompt as reference data, enabling the model to evaluate Nutritional Balance against real USDA values.
+
+**Search function:** `search_food_data(keyword, max_results=5)` in `rating_utils.py` — performs case-insensitive substring matching on the food description field and returns matching entries with their nutrient breakdowns.
+
+---
+
+## Tool Functions
+
+Agent 2 uses the following tools during its rating pipeline:
 
 | Tool | Purpose | Parameters | Returns |
 |------|---------|------------|---------|
-| `get_ingredient_nutrition` | Queries the USDA FoodData Central API for real-time nutrition data on a single ingredient | `ingredient` (str) | `{ingredient, calories, protein, carbohydrate, fat}` |
+| `get_ingredient_nutrition` | Queries the USDA FoodData Central API for real-time nutrition data on a single ingredient | `ingredient` (str) — the food to look up (e.g., "chicken breast") | `{ingredient, calories, protein, carbohydrate, fat}` or `{ingredient, error}` if not found |
+| `search_food_data` | RAG retrieval — keyword search over the local USDA Foundation Foods knowledge base | `keyword` (str), `max_results` (int, default 5) | List of matching foods with `{description, category, nutrients}` |
+| `retrieve_nutrition_context` | Orchestrates RAG retrieval for all ingredients and formats results into a prompt-ready text block | `ingredients` (list[str]) — user's ingredient list | Formatted string with nutritional reference data for injection into the LLM prompt |
+| `search_foods` | Searches USDA FoodData Central API for foods matching a query | `search_expression` (str), `api_key` (str, optional), `page_size` (int), `page_number` (int) | `(response_json, error_message)` — response contains a `foods` list |
+| `get_nutrition_for_food` | Gets nutrition for a single food via USDA search (returns first match) | `search_expression` (str), `api_key` (str, optional) | `({calories, protein, carbohydrate, fat}, error_message)` |
+| `estimate_recipe_nutrition_from_ingredients` | Estimates total recipe nutrition by summing USDA data for each ingredient | `ingredients` (list[str]), `api_key` (str, optional) | `({calories, protein, carbohydrate, fat}, error_message)` |
 
-The tool is defined with Ollama-compatible metadata in `rating_utils.py` and is called programmatically during the Agent 2 workflow. For each of the user's ingredients, the tool queries the USDA API and the results are included in the rating prompt as structured context.
+The `get_ingredient_nutrition` tool is defined with Ollama-compatible function calling metadata (`tool_get_ingredient_nutrition` in `rating_utils.py`) and is called programmatically for each ingredient during the Agent 2 workflow. The USDA API results are included in the rating prompt as structured context.
 
-## Project structure
+---
+
+## Technical Details
+
+### API Keys and Endpoints
+
+| Key | Purpose | Where to get it |
+|-----|---------|-----------------|
+| `OLLAMA_API_KEY` | Authenticates requests to Ollama Cloud for recipe generation (Agent 1) and rating (Agent 2) | [ollama.com](https://ollama.com) |
+| `FDC_API_KEY` | Authenticates requests to USDA FoodData Central for nutrition lookups | [fdc.nal.usda.gov/api-key-signup](https://fdc.nal.usda.gov/api-key-signup) |
+
+| Endpoint | Used by | Purpose |
+|----------|---------|---------|
+| `https://ollama.com/api/chat` | `ai_utils.py`, `rating_utils.py` | Ollama Cloud chat completions (model: `gpt-oss:20b-cloud`) |
+| `https://api.nal.usda.gov/fdc/v1/foods/search` | `nutrition_query.py` | USDA FoodData Central food search and nutrition lookup |
+
+### Packages
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `shiny` | ≥1.0.0 | Web UI framework |
+| `requests` | ≥2.28.0 | HTTP client for API calls |
+| `python-dotenv` | ≥1.0.0 | Load `.env` files |
+| `pandas` | ≥2.0.0 | Data manipulation |
+
+### File Structure
 
 | File | Purpose |
 |------|---------|
 | `app.py` | Main Shiny app (UI + server), multi-agent orchestration |
-| `ai_utils.py` | Agent 1: Ollama recipe generation |
-| `rating_utils.py` | Agent 2: Recipe rating with RAG and function calling |
-| `nutrition_query.py` | USDA FoodData Central API for nutrition lookups |
-| `api_utils.py` | Recipe fetch and table helpers |
+| `ai_utils.py` | Agent 1: Ollama Cloud recipe generation |
+| `rating_utils.py` | Agent 2: Recipe rating with RAG retrieval and function calling |
+| `nutrition_query.py` | USDA FoodData Central API client for nutrition lookups |
+| `api_utils.py` | Recipe fetch, ingredient validation, and table helpers |
 | `data/food_data.json` | RAG knowledge base — 365 USDA Foundation Foods |
 | `styles.css` | Custom UI styles including rating card |
 | `requirements.txt` | Python dependencies |
+| `.env` | API keys (not committed to git) |
+
+---
+
+## Usage Instructions
+
+### 1. Clone and enter the directory
+
+```bash
+git clone https://github.com/sesebear/food.git
+cd food/smart_chef
+```
+
+### 2. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Set up API keys
+
+Create a `.env` file in the `smart_chef` folder:
+
+```
+FDC_API_KEY=your_usda_key_here
+OLLAMA_API_KEY=your_ollama_key_here
+```
+
+- **USDA key:** sign up at https://fdc.nal.usda.gov/api-key-signup (free, instant)
+- **Ollama key:** sign up at https://ollama.com
+
+### 4. Run the app
+
+```bash
+shiny run app.py
+```
+
+Open the URL shown in the terminal (e.g., `http://127.0.0.1:8000`).
+
+### 5. Use the app
+
+1. **Enter ingredients** in the text box (comma- or semicolon-separated, e.g., `chicken, rice, broccoli, olive oil`).
+2. Click **Find recipes** — the app generates recipe ideas via Ollama and enriches them with USDA nutrition data. Results appear in a table.
+3. Click **Generate Recipe** on any row — this triggers the two-agent pipeline. Agent 1 generates the recipe, then Agent 2 rates it.
+4. The **rating card** appears to the right of the recipe with scores (1.0–5.0) for Ease of Preparation, Completeness, and Nutritional Balance.
+5. Click **Download Recipe** to save as a `.md` file.
+6. Click **← Back to recipes** to return to the table.
+
+### 6. (Optional) Deployed version
+
+The app is also deployed on Posit Connect and accessible without local setup:
+<https://connect.systems-apps.com/content/035e816b-7940-4f4a-8505-051fc59af618>

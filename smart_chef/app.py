@@ -297,7 +297,13 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
                     ingredients = _parse_ingredients()
                     api_key = (input.ollama_key() or "").strip() or None
 
-                    # Agent 1: Recipe Chef – generate the recipe
+                    print("\n" + "=" * 60)
+                    print("🍳 MULTI-AGENT WORKFLOW STARTED")
+                    print(f"   Selected recipe: {recipe.get('recipe_name', '?')}")
+                    print(f"   Ingredients: {', '.join(ingredients)}")
+                    print("=" * 60)
+
+                    print("\n🤖 AGENT 1: Recipe Chef — Generating full recipe...")
                     text, err = generate_recipe_from_ingredients(
                         ingredients,
                         ollama_api_key=api_key,
@@ -306,8 +312,9 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
                     )
                     ai_recipe_result.set({"text": text, "error": err})
 
-                    # Agent 2: Recipe Critic – rate the recipe
                     if text and not err:
+                        print(f"   ✅ Agent 1 complete — recipe generated ({len(text)} chars)")
+                        print("\n🤖 AGENT 2: Recipe Critic — Rating the recipe...")
                         rating, rating_err = rate_recipe(
                             recipe_text=text,
                             user_ingredients=ingredients,
@@ -315,6 +322,15 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
                             ollama_api_key=api_key,
                         )
                         rating_result.set({"rating": rating, "error": rating_err})
+                        if rating and not rating_err:
+                            print(f"   ✅ Agent 2 complete — Overall score: {rating.get('overall_score', '?')}/5.0")
+                        else:
+                            print(f"   ⚠️ Agent 2 error: {rating_err}")
+                        print("\n" + "=" * 60)
+                        print("🍳 MULTI-AGENT WORKFLOW COMPLETE")
+                        print("=" * 60 + "\n")
+                    else:
+                        print(f"   ❌ Agent 1 failed: {err}")
                     return
 
     @render.ui
