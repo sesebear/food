@@ -2,7 +2,7 @@
 
 Shiny for Python app that generates recipes from ingredients you have on hand, then rates each recipe with a visual scorecard. Uses a multi-agent workflow: Agent 1 (Ollama) generates the recipe, Agent 2 rates it on three dimensions using RAG and function calling. USDA FoodData Central provides nutrition data.
 
-**Deployed App:** <https://connect.systems-apps.com/content/035e816b-7940-4f4a-8505-051fc59af618>
+**Deployed App:** <https://connect.systems-apps.com/content/e8d8ef53-aff2-47b6-b620-27347d50c091>
 
 ---
 
