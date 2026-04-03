@@ -17,6 +17,7 @@ from shiny import App, Inputs, Outputs, Session, reactive, render, ui
 
 from ai_utils import generate_recipe_from_ingredients
 from api_utils import fetch_recipes_for_ingredients, recipes_to_table_rows
+from rating_utils import rate_recipe
 
 ## 0.2 Optional .env ############################
 
@@ -123,17 +124,105 @@ def make_ingredients_card():
     )
 
 
-# Recipe detail page (recipe + download)
+# Recipe detail page — side-by-side: recipe (left) + rating card (right)
 def make_recipe_detail_ui():
-    """Detail view shown when user selects a recipe and generates AI content."""
+    """Detail view: recipe on the left, rating card pinned to the right."""
     return ui.div(
         ui.input_action_button("back_to_table", "← Back to recipes", class_="btn btn-outline-secondary mb-3"),
         ui.div(
-            ui.output_ui("ai_recipe_output"),
-            ui.output_ui("download_recipe_ui"),
-            class_="card card-body mb-3",
+            # Left column: recipe content + download
+            ui.div(
+                ui.div(
+                    ui.output_ui("ai_recipe_output"),
+                    ui.output_ui("download_recipe_ui"),
+                    class_="card card-body",
+                ),
+                class_="detail-recipe-col",
+            ),
+            # Right column: rating card (sticky)
+            ui.div(
+                ui.output_ui("rating_card_output"),
+                class_="detail-rating-col",
+            ),
+            class_="detail-split-layout",
         ),
         id="recipe_detail_view",
+    )
+
+
+def _make_stars_html(score: float) -> ui.Tag:
+    """Render filled / half / empty stars for a score out of 5."""
+    full = int(score)
+    half = 1 if (score - full) >= 0.3 else 0
+    empty = 5 - full - half
+    stars = "★" * full + ("½" if half else "") + "☆" * empty
+    return ui.span(stars, class_="rating-stars")
+
+
+def _score_color(score: float) -> str:
+    """Return a CSS color class name for the given score."""
+    if score >= 4.0:
+        return "rating-green"
+    if score >= 3.0:
+        return "rating-yellow"
+    return "rating-red"
+
+
+def _make_bar(label: str, score: float) -> ui.Tag:
+    """One category row: label, progress bar, score number."""
+    pct = max(0, min(100, score / 5.0 * 100))
+    color = _score_color(score)
+    return ui.div(
+        ui.div(
+            ui.span(label, class_="rating-bar-label"),
+            ui.div(
+                ui.div(class_=f"rating-bar-fill {color}", style=f"width:{pct}%"),
+                class_="rating-bar-track",
+            ),
+            ui.span(f"{score}", class_="rating-bar-score"),
+            class_="rating-bar-row",
+        ),
+        class_="mb-2",
+    )
+
+
+def make_rating_card(rating: dict) -> ui.Tag:
+    """Build the visual rating card from Agent 2's structured rating."""
+    overall = rating.get("overall_score", 0)
+    summary = rating.get("summary")
+    categories = [
+        ("Ease of Preparation", rating.get("ease_of_preparation", 0)),
+        ("Completeness", rating.get("completeness", 0)),
+        ("Nutritional Balance", rating.get("nutritional_balance", 0)),
+    ]
+
+    summary_section = (
+        ui.div(
+            ui.hr(class_="rating-divider"),
+            ui.p(summary, class_="rating-summary-text"),
+            class_="rating-summary",
+        )
+        if summary
+        else ui.span()
+    )
+
+    return ui.div(
+        ui.h5("Recipe Rating", class_="rating-card-title"),
+        ui.div(
+            ui.div(
+                ui.div(f"{overall}", class_="rating-overall-number"),
+                _make_stars_html(overall),
+                ui.div("Overall Score", class_="rating-overall-label"),
+                class_="rating-overall-section",
+            ),
+            ui.div(
+                *[_make_bar(label, score) for label, score in categories],
+                class_="rating-categories-section",
+            ),
+            class_="rating-card-body",
+        ),
+        summary_section,
+        class_="card card-body rating-card",
     )
 
 
@@ -163,6 +252,7 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
     recipes_result = reactive.value(None)
     selected_recipe = reactive.value(None)  # When set, show detail view
     ai_recipe_result = reactive.value(None)
+    rating_result = reactive.value(None)    # Agent 2 rating
 
     def _get_ingredients_text() -> str:
         return (input.ingredients_main() or "").strip()
@@ -203,8 +293,11 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
                 if n is not None and n > 0:
                     recipe = rlist[i]
                     selected_recipe.set(recipe)
+                    rating_result.set(None)  # Reset while generating
                     ingredients = _parse_ingredients()
                     api_key = (input.ollama_key() or "").strip() or None
+
+                    # Agent 1: Recipe Chef – generate the recipe
                     text, err = generate_recipe_from_ingredients(
                         ingredients,
                         ollama_api_key=api_key,
@@ -212,6 +305,16 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
                         recipe_description=recipe.get("recipe_description"),
                     )
                     ai_recipe_result.set({"text": text, "error": err})
+
+                    # Agent 2: Recipe Critic – rate the recipe
+                    if text and not err:
+                        rating, rating_err = rate_recipe(
+                            recipe_text=text,
+                            user_ingredients=ingredients,
+                            recipe_name=recipe.get("recipe_name", ""),
+                            ollama_api_key=api_key,
+                        )
+                        rating_result.set({"rating": rating, "error": rating_err})
                     return
 
     @render.ui
@@ -335,6 +438,29 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
             "Download Recipe",
             class_="btn btn-outline-primary mt-2",
         )
+
+    @render.ui
+    def rating_card_output():
+        """Render Agent 2's rating card below the recipe."""
+        out = rating_result.get()
+        if out is None:
+            recipe_out = ai_recipe_result.get()
+            if recipe_out and recipe_out.get("text") and not recipe_out.get("error"):
+                return ui.div(
+                    ui.p("Rating recipe...", class_="text-muted"),
+                    class_="card card-body mt-3",
+                )
+            return None
+        err = out.get("error")
+        if err:
+            return ui.div(
+                ui.div(f"Rating unavailable: {err}", class_="alert alert-warning mb-0"),
+                class_="mt-3",
+            )
+        rating = out.get("rating")
+        if not rating:
+            return None
+        return make_rating_card(rating)
 
 
 # 3. App #################################

@@ -97,6 +97,36 @@ body {
   border-color: rgba(212, 163, 115, 0.4);
 }
 
+/* Detail split layout – recipe left, rating right */
+.detail-split-layout {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+}
+
+.detail-recipe-col {
+  flex: 1;
+  min-width: 0;
+}
+
+.detail-rating-col {
+  width: 370px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 1rem;
+  align-self: flex-start;
+}
+
+@media (max-width: 992px) {
+  .detail-split-layout {
+    flex-direction: column;
+  }
+  .detail-rating-col {
+    width: 100%;
+    position: static;
+  }
+}
+
 /* Markdown content */
 .markdown-recipe,
 .markdown-report {
@@ -120,4 +150,131 @@ body {
 .data-grid {
   border-radius: 8px;
   overflow: hidden;
+}
+
+/* Rating card — compact vertical layout for right column */
+.rating-card {
+  background: var(--smart-chef-bg);
+  border: 1px solid rgba(45, 106, 79, 0.15);
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(27, 67, 50, 0.08);
+}
+
+.rating-card-title {
+  color: var(--smart-chef-primary);
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+}
+
+.rating-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+}
+
+.rating-overall-section {
+  text-align: center;
+}
+
+.rating-overall-number {
+  font-size: 2.8rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--smart-chef-text);
+}
+
+.rating-stars {
+  display: block;
+  font-size: 1.2rem;
+  color: #e6a817;
+  letter-spacing: 2px;
+  margin: 0.2rem 0;
+}
+
+.rating-overall-label {
+  font-size: 0.8rem;
+  color: var(--smart-chef-muted);
+  font-weight: 500;
+}
+
+.rating-categories-section {
+  width: 100%;
+}
+
+.rating-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rating-bar-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--smart-chef-text);
+  min-width: 110px;
+  flex-shrink: 0;
+}
+
+.rating-bar-track {
+  flex: 1;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.rating-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.rating-bar-fill.rating-green {
+  background: linear-gradient(90deg, #40916c, #52b788);
+}
+
+.rating-bar-fill.rating-yellow {
+  background: linear-gradient(90deg, #e6a817, #f0c040);
+}
+
+.rating-bar-fill.rating-red {
+  background: linear-gradient(90deg, #d45d5d, #e87070);
+}
+
+.rating-bar-score {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--smart-chef-text);
+  min-width: 24px;
+  text-align: right;
+}
+
+/* Rating summary */
+.rating-divider {
+  margin: 0.75rem 0 0.5rem;
+  border-color: rgba(45, 106, 79, 0.12);
+}
+
+.rating-summary-text {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--smart-chef-muted);
+  margin: 0;
+}
+
+/* Responsive: on narrow screens the card stacks below the recipe */
+@media (max-width: 992px) {
+  .rating-card {
+    max-width: 480px;
+  }
+  .rating-card-body {
+    flex-direction: row;
+    gap: 1.5rem;
+    align-items: flex-start;
+  }
+  .rating-overall-section {
+    min-width: 100px;
+  }
 }
