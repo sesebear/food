@@ -1,0 +1,69 @@
+name: 12 Train Brussels Model (R)
+
+on:
+  schedule:
+    # Weekly retrain — Mondays at 06:30 UTC (offset 30 min from the Python job
+    # so they don't race the commit-back).
+    - cron: "30 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: 12-train-r
+  cancel-in-progress: false
+
+jobs:
+  train_r:
+    name: Train Brussels XGBoost model with R
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 12_end
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - name: Install R dependencies (cached)
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::DBI
+            any::RSQLite
+            any::dplyr
+            any::lubridate
+            any::xgboost
+            any::jsonlite
+
+      - name: Train Brussels model (R)
+        run: Rscript 02_train_model.R
+
+      - name: Upload xgboost-model artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: xgboost-model-r
+          path: |
+            12_end/data/modelr.json
+            12_end/data/validationr.json
+          if-no-files-found: error
+
+      - name: Commit updated model files
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add 12_end/data/modelr.json 12_end/data/validationr.json
+          if git diff --cached --quiet; then
+            echo "No model changes to commit."
+          else
+            git commit -m "chore(12_end): retrain modelr.json via R cron [skip ci]"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin HEAD:"${GITHUB_REF_NAME}"
+          fi

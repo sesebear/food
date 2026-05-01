@@ -12,10 +12,10 @@ Train an XGBoost model using Brussels rows for one `metro_id`, then run weekly r
 
 ### 🧱 Stage 1: Train locally
 
-- [ ] Open [`02_train_model.R`](02_train_model.R) or [`02_train_model.py`](02_train_model.py).
-- [ ] Confirm `METRO_ID` is set to Brussels (default `948`).
-- [ ] Run the script from `12_end/`.
-- [ ] Confirm `data/modelr.json` (R) or `data/modelpy.json` (Python) is created and RMSE is printed.
+- [x] Open [`02_train_model.R`](02_train_model.R) or [`02_train_model.py`](02_train_model.py).
+- [x] Confirm `METRO_ID` is set to Brussels (default `948`).
+- [x] Run the script from `12_end/`.
+- [x] Confirm `data/modelr.json` (R) or `data/modelpy.json` (Python) is created and RMSE is printed.
 
 ```
 Model saved to data/modelr.json
@@ -24,8 +24,8 @@ Training RMSE: 142.35
 
 ### 🧱 Stage 2: Automate weekly retraining
 
-- [ ] Open [`.github/workflows/12-train-r.yml`](../.github/workflows/12-train-r.yml) or [`.github/workflows/12-train-python.yml`](../.github/workflows/12-train-python.yml) and inspect the weekly cron schedule.
-- [ ] Confirm `train_r`/`train_python` job runs.
+- [x] Open [`.github/workflows/12-train-r.yml`](../.github/workflows/12-train-r.yml) or [`.github/workflows/12-train-python.yml`](../.github/workflows/12-train-python.yml) and inspect the weekly cron schedule.
+- [x] Confirm `train_r`/`train_python` job runs.
 - [ ] Trigger the workflow manually from **Actions**.
 - [ ] Confirm workflows commits its own files: R writes `data/modelr.json` and Python writes `data/modelpy.json`.
 
