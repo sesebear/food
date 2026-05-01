@@ -1,0 +1,60 @@
+name: 12 Ingest Brussels Traffic (R)
+
+on:
+  schedule:
+    # Offset 5 minutes from the Python job to avoid simultaneous commit-back races.
+    - cron: "5/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: 12-ingest-r
+  cancel-in-progress: false
+
+jobs:
+  ingest_r:
+    name: Ingest Brussels traffic with R
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 12_end
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - name: Install R dependencies (cached)
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::httr2
+            any::dplyr
+            any::tibble
+            any::purrr
+            any::lubridate
+            any::DBI
+            any::RSQLite
+
+      - name: Run Brussels ingest (R)
+        run: Rscript 01_ingest_traffic.R
+
+      - name: Commit updated traffic.db
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add 12_end/data/traffic.db
+          if git diff --cached --quiet; then
+            echo "No traffic.db changes to commit."
+          else
+            git commit -m "chore(12_end): update traffic.db via R ingest [skip ci]"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin HEAD:"${GITHUB_REF_NAME}"
+          fi
