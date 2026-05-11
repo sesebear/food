@@ -1,6 +1,6 @@
 # smart-chef-validation
 
-Validation system for HOMEWORK3. Scores Smart Chef's AI-generated recipe reports on 7 recipe-specific dimensions (a mix of deterministic checks, RAG-grounded comparisons, and AI-graded judgments) and runs a statistical experiment to compare three Agent-1 prompt variants. Built for the [Decision Support / Text Analysis](../../11_decision_support/HOMEWORK3.md) coursework.
+Validation system for HOMEWORK3. Scores Smart Chef's AI-generated recipe reports on 7 recipe-specific dimensions (a mix of deterministic checks, RAG-grounded comparisons, and AI-graded judgments) and runs a statistical experiment to compare three Agent-1 prompt variants.
 
 ## Tech stack
 
