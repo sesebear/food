@@ -1,0 +1,39 @@
+DESCRIPTIVES — mean ± std by prompt (and overall)
+
+          overall_score        dish_name_match       ingredient_faithfulness      technique_specificity       food_safety       nutritional_honesty       reproducibility       cultural_plausibility      
+                   mean    std            mean   std                    mean  std                  mean   std        mean   std                mean   std            mean   std                  mean   std
+prompt_id                                                                                                                                                                                                  
+A                 68.80  11.22             1.0  0.00                   100.0  0.0                   2.4  1.65         0.4  0.52                 2.2  0.42            0.69  0.09                   6.7  0.48
+B                 48.55  12.25             0.3  0.48                   100.0  0.0                   0.7  1.34         0.2  0.42                 2.2  0.42            0.51  0.19                   6.7  0.48
+C                 76.48   6.75             1.0  0.00                   100.0  0.0                   5.0  0.00         0.4  0.52                 2.2  0.42            0.77  0.10                   6.3  0.67
+
+
+Overall mean across all prompts: 64.61
+
+
+BARTLETT'S TEST
+  statistic=3.0672, p=0.2158, equal_var=True
+
+
+OMNIBUS ANOVA on overall_score ~ prompt_id
+   Source          SS  DF          MS         F    p_unc      np2
+prompt_id 4162.634927   2 2081.317463 19.433614 0.000006 0.590084
+   Within 2891.668620  27  107.098838       NaN      NaN      NaN
+
+
+PAIRWISE T-TESTS (Holm-corrected)
+ Contrast A B  Paired  Parametric         T  dof alternative    p_unc   p_corr p_adjust     BF10     cohen
+prompt_id A B   False        True  3.855261 18.0   two-sided 0.001159 0.002319     holm   26.686  1.724125
+prompt_id A C   False        True -1.855804 18.0   two-sided 0.079931 0.079931     holm    1.259 -0.829941
+prompt_id B C   False        True -6.316371 18.0   two-sided 0.000006 0.000018     holm 2231.293 -2.824767
+
+
+PER-DIMENSION ANOVAS
+              dimension       F  p_unc                                                 note
+        dish_name_match 21.0000 0.0000 fallback: standard ANOVA (one group has no variance)
+ingredient_faithfulness     NaN    NaN                               constant — no variance
+  technique_specificity 31.2667 0.0000 fallback: standard ANOVA (one group has no variance)
+            food_safety  0.6197 0.5493                                                     
+    nutritional_honesty  0.0000 1.0000                                                     
+        reproducibility  7.2917 0.0052                                                     
+  cultural_plausibility  1.3472 0.2854                                                     

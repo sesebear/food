@@ -1,0 +1,17 @@
+# Smart Chef validation – dependencies
+# Install: pip install -r smart_chef/validation/requirements.txt
+#
+# These are *in addition* to smart_chef/requirements.txt
+# (shiny, requests, python-dotenv, pandas). We pin the analysis stack here
+# so the Shiny app's runtime stays slim.
+
+pandas>=2.0.0
+requests>=2.28.0
+python-dotenv>=1.0.0
+tqdm>=4.65.0
+
+# Statistics + plotting
+scipy>=1.10.0
+pingouin>=0.5.4
+statsmodels>=0.14.0
+matplotlib>=3.7.0

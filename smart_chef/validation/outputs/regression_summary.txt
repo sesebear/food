@@ -1,0 +1,30 @@
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:          overall_score   R-squared:                       0.751
+Model:                            OLS   Adj. R-squared:                  0.687
+Method:                 Least Squares   F-statistic:                     11.59
+Date:                Mon, 11 May 2026   Prob (F-statistic):           5.61e-06
+Time:                        03:19:05   Log-Likelihood:                -103.59
+No. Observations:                  30   AIC:                             221.2
+Df Residuals:                      23   BIC:                             231.0
+Df Model:                           6                                         
+Covariance Type:            nonrobust                                         
+==============================================================================================================
+                                                 coef    std err          t      P>|t|      [0.025      0.975]
+--------------------------------------------------------------------------------------------------------------
+Intercept                                     65.5293      4.218     15.536      0.000      56.804      74.255
+C(prompt_id)[T.B]                            -20.2450      3.905     -5.184      0.000     -28.323     -12.167
+C(prompt_id)[T.C]                              7.6820      3.905      1.967      0.061      -0.396      15.760
+C(ingredient_set_id)[T.S2_vegetarian]         -0.8750      5.041     -0.174      0.864     -11.304       9.554
+C(ingredient_set_id)[T.S3_seafood]             6.9367      5.041      1.376      0.182      -3.492      17.365
+C(ingredient_set_id)[T.S4_dessert_baking]     13.5500      5.041      2.688      0.013       3.121      23.979
+C(ingredient_set_id)[T.S5_quick_weeknight]    -3.2633      5.041     -0.647      0.524     -13.692       7.165
+==============================================================================
+Omnibus:                        0.115   Durbin-Watson:                   1.451
+Prob(Omnibus):                  0.944   Jarque-Bera (JB):                0.054
+Skew:                           0.068   Prob(JB):                        0.973
+Kurtosis:                       2.843   Cond. No.                         6.45
+==============================================================================
+
+Notes:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.

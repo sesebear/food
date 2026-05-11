@@ -1,0 +1,34 @@
+{
+  "ingredient_sets": [
+    {
+      "id": "S1_protein_grain",
+      "stratum": "protein + grain",
+      "dish_name": "Chicken Fried Rice",
+      "ingredients": ["chicken breast", "rice", "eggs", "soy sauce", "garlic", "scallions"]
+    },
+    {
+      "id": "S2_vegetarian",
+      "stratum": "vegetarian",
+      "dish_name": "Mushroom Risotto",
+      "ingredients": ["arborio rice", "mushrooms", "parmesan", "onion", "white wine", "butter"]
+    },
+    {
+      "id": "S3_seafood",
+      "stratum": "seafood",
+      "dish_name": "Lemon Garlic Shrimp",
+      "ingredients": ["shrimp", "lemon", "garlic", "butter", "parsley", "olive oil"]
+    },
+    {
+      "id": "S4_dessert_baking",
+      "stratum": "dessert / baking",
+      "dish_name": "Classic Chocolate Chip Cookies",
+      "ingredients": ["flour", "butter", "brown sugar", "eggs", "chocolate chips", "vanilla"]
+    },
+    {
+      "id": "S5_quick_weeknight",
+      "stratum": "quick weeknight",
+      "dish_name": "Tomato Basil Pasta",
+      "ingredients": ["pasta", "canned tomatoes", "basil", "garlic", "olive oil", "parmesan"]
+    }
+  ]
+}
